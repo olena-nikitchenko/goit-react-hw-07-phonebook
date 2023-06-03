@@ -1,4 +1,5 @@
 import React from 'react';
+import { ToastContainer } from 'react-toastify';
 import PhonebookForm from './components/PhonebookForm/PhonebookForm.js';
 import Section from './components/Section/Section.js';
 import ContactList from './components/ContactList/ContactList.js';
@@ -14,6 +15,7 @@ const App = () => {
         <Filter />
         <ContactList />
       </Section>
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 };

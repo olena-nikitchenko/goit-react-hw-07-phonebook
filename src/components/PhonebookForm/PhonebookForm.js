@@ -1,49 +1,54 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { nanoid } from 'nanoid';
-import { addContact } from '../../redux/contactsSlice';
-import { getContactValue } from '../../redux/contactsSlice.js';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import {
+  useGetContactsQuery,
+  useAddContactMutation,
+} from '../../redux/contactsSlice.js';
 import css from './Phonebook.module.css';
 
-const INITIAL_STATE = {
-  name: '',
-  number: '',
-};
-
 const PhonebookForm = () => {
-  const dispatch = useDispatch();
-  const contacts = useSelector(getContactValue);
-  const [formData, setFormData] = useState(INITIAL_STATE);
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [addContact] = useAddContactMutation();
+  const { data } = useGetContactsQuery();
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({ ...prevState, [name]: value }));
+  const reset = () => {
+    setNewName('');
+    setNewPhone('');
   };
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    const { name, number } = formData;
-    const isExistingContact = contacts.some(
-      contact => contact.name === name && contact.number === number
+  const addNumberContact = async () => {
+    const newContact = { name: newName, phone: newPhone };
+
+    const isExistContact = data.find(
+      contact =>
+        contact.name === newContact.name && contact.phone === newContact.phone
     );
-    if (isExistingContact) {
-      alert(`${name} is already in contacts`);
+
+    if (isExistContact) {
+      toast.error(
+        `Contact with the name ${newContact.name} and phone number ${newContact.phone} already exists`
+      );
       return;
     }
-    const newContact = { id: nanoid(), name, number };
-    dispatch(addContact(newContact));
 
+    try {
+      await addContact(newContact);
+      toast.success(`Contact ${newContact.name} added`);
+    } catch (error) {
+      toast.error('Oops! Something went wrong. Please try again!');
+    }
+  };
+
+  const handleAddContacts = e => {
+    e.preventDefault();
+    addNumberContact();
     reset();
   };
 
-  const reset = () => {
-    setFormData({ ...INITIAL_STATE });
-  };
-
-  const { name, number } = formData;
-
   return (
-    <form onSubmit={handleSubmit} className={css.Form}>
+    <form onSubmit={handleAddContacts} className={css.Form}>
       <label className={css.Label}>
         Name
         <input
@@ -52,8 +57,8 @@ const PhonebookForm = () => {
           name="name"
           pattern="[A-Za-z\s]+"
           required
-          value={name}
-          onChange={handleChange}
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
           className={css.Input}
         />
       </label>
@@ -66,8 +71,8 @@ const PhonebookForm = () => {
           pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
           title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
           required
-          value={number}
-          onChange={handleChange}
+          value={newPhone}
+          onChange={e => setNewPhone(e.target.value)}
           className={css.Input}
         />
       </label>
